@@ -11,11 +11,11 @@ from tensorflow import keras
 from keras import backend as K
 from keras.models import Model
 from keras.layers import *
-from keras.optimizers import Adam
+from keras.optimizers import adam_v2
 from keras.callbacks import ModelCheckpoint, CSVLogger, ReduceLROnPlateau
 from keras.losses import CategoricalCrossentropy
 from keras.preprocessing.image import ImageDataGenerator
-from keras.applications import MobileNetV2
+from keras.applications import mobilenet_v2
 
 if __name__ == '__main__':
     train_datagen = ImageDataGenerator(
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     )
 
     train_generator = train_datagen.flow_from_directory(
-        'train', 
+       'train', 
         target_size=(224, 224), 
         batch_size=32,
         class_mode='categorical',
@@ -48,14 +48,14 @@ if __name__ == '__main__':
     )
 
     inputs = Input(shape=(224, 224, 3))
-    mobilenetv2 = MobileNetV2(include_top=False, input_tensor=inputs)
+    mobilenetv2 = mobilenet_v2.MobileNetV2(include_top=False, input_tensor=inputs)
     cnn = GlobalAveragePooling2D()(mobilenetv2.layers[-1].output)
     cnn = Dropout(0.3)(cnn)
     cnn = Dense(512, activation='relu')(cnn)
     cnn = Dense(211, activation='softmax')(cnn)
     model = Model(inputs=inputs, outputs=cnn)
     model.summary()
-    model.compile(optimizer=Adam(1e-4), loss=CategoricalCrossentropy(label_smoothing=0.1), metrics=['accuracy'])
+    model.compile(optimizer=adam_v2.Adam(learning_rate=1e-4), loss=CategoricalCrossentropy(label_smoothing=0.1), metrics=['accuracy'])
     model.fit_generator(train_generator, verbose=1, epochs=100, validation_data=val_generator, callbacks=[
         CSVLogger('train.log'),
         ModelCheckpoint('model.h5', save_best_only=True, verbose=2, monitor='val_accuracy'),
